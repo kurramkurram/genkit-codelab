@@ -77,29 +77,29 @@ export const itineraryFlow = ai.defineFlow(
   },
 
   async (tripDetails) => {
-    const imgDescription = '';
+    // const imgDescription = '';
     // TODO: 2. Replace the line above with this:
-    // const imgDescription = await ai.run('imgDescription', async () => {
-    //   if (!tripDetails.imageUrls?.length) {
-    //     return '';
-    //   }
-    //   console.log('Generating image description...');
-    //   const images = tripDetails.imageUrls.map((url) => ({
-    //     media: { url },
-    //   }));
-    //   const response = await ai.generate({
-    //     model: 'vertexai/gemini-2.5-flash',
-    //     prompt: [
-    //       {
-    //         text: `Describe these image(s) in a detailed paragraph as though it was a tourist destination.
-    // Do not give the name of the location, only give a description of what you see in the image and what you think a tourist would like it described as in a dream vacation.`,
-    //       },
-    //       ...images,
-    //     ],
-    //   });
-    //   console.log('Image description generated:', response.text);
-    //   return response.text;
-    // });
+    const imgDescription = await ai.run('imgDescription', async () => {
+      if (!tripDetails.imageUrls?.length) {
+        return '';
+      }
+      console.log('Generating image description...');
+      const images = tripDetails.imageUrls.map((url) => ({
+        media: { url },
+      }));
+      const response = await ai.generate({
+        model: 'vertexai/gemini-2.5-flash',
+        prompt: [
+          {
+            text: `Describe these image(s) in a detailed paragraph as though it was a tourist destination.
+    Do not give the name of the location, only give a description of what you see in the image and what you think a tourist would like it described as in a dream vacation.`,
+          },
+          ...images,
+        ],
+      });
+      console.log('Image description generated:', response.text);
+      return response.text;
+    });
 
     const places = await ai.run(
       'Retrieve matching places',
