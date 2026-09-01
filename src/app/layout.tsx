@@ -17,6 +17,7 @@
 import type { Metadata } from 'next';
 import './globals.scss';
 import { Rubik, Lato } from 'next/font/google';
+import AppCheckProvider from '@/components/AppCheckProvider';
 
 const rubik = Rubik({
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
       <body
         className={`${rubik.variable} ${lato.variable} font-sans text-foreground flex justify-center sm:-translate-y-0 h-full sm:h-[800px] sm:bg-gray-200 w-full sm:max-w-[412px] sm:shadow-2xl`}
       >
+        <AppCheckProvider />
         {children}
       </body>
     </html>

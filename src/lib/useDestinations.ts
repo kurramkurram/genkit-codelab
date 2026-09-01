@@ -19,6 +19,9 @@
 import { useEffect, useState } from 'react';
 
 import { Destination } from './gemini/types';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+
+import { app } from './firebase';
 
 export default function useDestinations() {
   const [destinations, setDestinations] = useState<
@@ -36,28 +39,21 @@ export default function useDestinations() {
           return;
         }
 
-        const functionUrl =
-          process.env.NEXT_PUBLIC_GET_ITINERARY_FUNCTION_URL;
+        const functions = getFunctions(app, 'us-central1');
 
-        if (!functionUrl) {
-          throw new Error(
-            'NEXT_PUBLIC_GET_ITINERARY_FUNCTION_URL is not configured',
-          );
-        }
+        const getItinerary = httpsCallable<
+          { itineraryId: string },
+          {
+            itineraryId: string;
+            itinerary: Destination[];
+          }
+        >(functions, 'getItinerary');
 
-        const response = await fetch(
-          `${functionUrl}?itineraryId=${encodeURIComponent(itineraryId)}`,
-        );
+        const result = await getItinerary({
+          itineraryId,
+        });
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch itinerary: ${response.status}`,
-          );
-        }
-
-        const data = await response.json();
-
-        setDestinations(data.itinerary);
+        setDestinations(result.data.itinerary);
       } catch (error) {
         console.error('Failed to load itinerary', error);
         setDestinations(null);

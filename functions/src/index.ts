@@ -30,7 +30,7 @@ setGlobalOptions({maxInstances: 10});
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
 // });
-import {onRequest} from "firebase-functions/v2/https";
+import {onRequest, onCall} from "firebase-functions/v2/https";
 import {getStorage} from "firebase-admin/storage";
 import {initializeApp} from "firebase-admin/app";
 
@@ -103,25 +103,20 @@ export const saveItinerary = onRequest(async (req, res) => {
   }
 });
 
-export const getItinerary = onRequest(
+export const getItinerary = onCall(
   {
-    cors: "http://localhost:3000",
+    enforceAppCheck: true,
   },
-  async (req, res) => {
+  async (request) => {
+    console.log("App Check:", request.app);
     try {
-      if (req.method !== "GET") {
-        res.status(405).send("Method Not Allowed");
-        return;
-      }
-
-      const itineraryId = req.query.itineraryId;
+      const itineraryId = request.data?.itineraryId;
 
       if (
         typeof itineraryId !== "string" ||
         !itineraryId
       ) {
-        res.status(400).send("itineraryId is required");
-        return;
+        throw new Error("itineraryId is required");
       }
 
       const bucket = getStorage().bucket();
@@ -133,8 +128,7 @@ export const getItinerary = onRequest(
       const [exists] = await file.exists();
 
       if (!exists) {
-        res.status(404).send("Itinerary not found");
-        return;
+        throw new Error("Itinerary not found");
       }
 
       const [contents] = await file.download();
@@ -143,16 +137,72 @@ export const getItinerary = onRequest(
         contents.toString("utf-8"),
       );
 
-      res.status(200).json({
+      return {
         itineraryId,
         itinerary,
-      });
+      };
     } catch (error) {
       console.error("Failed to get itinerary", error);
 
-      res.status(500).json({
-        error: "Failed to get itinerary",
-      });
+      throw new Error("Failed to get itinerary");
     }
-  }
+  },
 );
+
+// export const getItinerary = onCall(
+//   {
+//     cors: [
+//       "http://localhost:3000",
+//       "https://genkit-codelab--genkit-codelab-fe964.asia-east1.hosted.app",
+//     ],
+//     enforceAppCheck: true,
+//   },
+//   async (req, res) => {
+//     try {
+//       if (req.method !== "GET") {
+//         res.status(405).send("Method Not Allowed");
+//         return;
+//       }
+
+//       const itineraryId = req.query.itineraryId;
+
+//       if (
+//         typeof itineraryId !== "string" ||
+//         !itineraryId
+//       ) {
+//         res.status(400).send("itineraryId is required");
+//         return;
+//       }
+
+//       const bucket = getStorage().bucket();
+
+//       const file = bucket.file(
+//         `itineraries/${itineraryId}.json`,
+//       );
+
+//       const [exists] = await file.exists();
+
+//       if (!exists) {
+//         res.status(404).send("Itinerary not found");
+//         return;
+//       }
+
+//       const [contents] = await file.download();
+
+//       const itinerary = JSON.parse(
+//         contents.toString("utf-8"),
+//       );
+
+//       res.status(200).json({
+//         itineraryId,
+//         itinerary,
+//       });
+//     } catch (error) {
+//       console.error("Failed to get itinerary", error);
+
+//       res.status(500).json({
+//         error: "Failed to get itinerary",
+//       });
+//     }
+//   }
+// );
