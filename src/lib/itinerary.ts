@@ -19,10 +19,15 @@
 import { ItineraryFlowOutput } from './genkit/types';
 import { itineraryFlow } from './genkit/itineraryFlow';
 
+type GenerateItineraryResult = {
+  itineraryId: string;
+  itinerary: ItineraryFlowOutput;
+};
+
 export async function generateItinerary(
-  previousState: null | undefined | ItineraryFlowOutput,
+  previousState: null | undefined | GenerateItineraryResult,
   formData: FormData,
-): Promise<ItineraryFlowOutput | undefined> {
+): Promise<GenerateItineraryResult | undefined> {
   const request = formData.get('request');
   if (!request) {
     throw new Error('No request provided');
@@ -33,10 +38,42 @@ export async function generateItinerary(
     images.filter((i) => i.size > 0).map(fileToDataURL),
   );
 
-  return await itineraryFlow({
+  const itinerary = await itineraryFlow({
     request: request.toString(),
     imageUrls,
   });
+
+  const functionUrl = process.env.SAVE_ITINERARY_FUNCTION_URL;
+
+  if (!functionUrl) {
+    throw new Error(
+      "SAVE_ITINERARY_FUNCTION_URL is not configured"
+    );
+  }
+
+  const itineraryId = crypto.randomUUID();
+
+  const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json"
+      },
+      body: JSON.stringify({
+        itinerary,
+        itineraryId,
+      }),
+    });
+
+  if (!response.ok) {
+    throw new Error(
+      `Cloud Functions request failed: ${response.status}`
+    )
+  }
+
+  return {
+    itineraryId,
+    itinerary,
+  };
 }
 
 export async function fileToDataURL(file: File): Promise<string> {

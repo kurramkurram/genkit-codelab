@@ -19,7 +19,6 @@
 import { useEffect, useState } from 'react';
 
 import { Destination } from './gemini/types';
-import { DESTINATIONS_LOCAL_STORAGE_KEY } from './constants';
 
 export default function useDestinations() {
   const [destinations, setDestinations] = useState<
@@ -27,20 +26,45 @@ export default function useDestinations() {
   >();
 
   useEffect(() => {
-    const localStorageDestination = localStorage.getItem(
-      DESTINATIONS_LOCAL_STORAGE_KEY,
-    );
+    const fetchDestinations = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const itineraryId = params.get('itineraryId');
 
-    try {
-      if (localStorageDestination) {
-        setDestinations(JSON.parse(localStorageDestination));
-        return;
+        if (!itineraryId) {
+          setDestinations(null);
+          return;
+        }
+
+        const functionUrl =
+          process.env.NEXT_PUBLIC_GET_ITINERARY_FUNCTION_URL;
+
+        if (!functionUrl) {
+          throw new Error(
+            'NEXT_PUBLIC_GET_ITINERARY_FUNCTION_URL is not configured',
+          );
+        }
+
+        const response = await fetch(
+          `${functionUrl}?itineraryId=${encodeURIComponent(itineraryId)}`,
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch itinerary: ${response.status}`,
+          );
+        }
+
+        const data = await response.json();
+
+        setDestinations(data.itinerary);
+      } catch (error) {
+        console.error('Failed to load itinerary', error);
+        setDestinations(null);
       }
-    } catch (e) {
-      // JSON.parse error, ignore and set destination null
-    }
+    };
 
-    setDestinations(null);
+    fetchDestinations();
   }, []);
 
   return { destinations };

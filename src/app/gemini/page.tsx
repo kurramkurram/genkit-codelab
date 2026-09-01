@@ -22,7 +22,7 @@ import { useEffect, useActionState } from 'react';
 import DreamingOverlay from '@/components/DreamingOverlay';
 import FormFields from '@/components/FormFields';
 
-import { DESTINATIONS_LOCAL_STORAGE_KEY } from '@/lib/constants';
+// import { DESTINATIONS_LOCAL_STORAGE_KEY } from '@/lib/constants';
 import { generateItinerary } from '@/lib/itinerary';
 import { GEMINI } from '@/lib/routes';
 
@@ -32,21 +32,18 @@ type generateItineraryArgs = Parameters<typeof generateItinerary>;
 
 export default function GeminiPromptPage() {
   const router = useRouter();
-  const [itinerary, formAction] = useActionState<
+  const [result, formAction] = useActionState<
     generateItineraryArgs[0],
     generateItineraryArgs[1]
   >(generateItinerary, null);
 
   useEffect(() => {
-    if (itinerary) {
-      localStorage.setItem(
-        DESTINATIONS_LOCAL_STORAGE_KEY,
-        JSON.stringify(itinerary),
-      );
-
-      router.push(GEMINI.RESULTS);
+    if (result) {
+      router.push(
+        `${GEMINI.RESULTS}?itineraryId=${result.itineraryId}`,
+      )
     }
-  }, [itinerary, router]);
+  }, [result, router]);
 
   return (
     <main className="container relative fle x flex-col gap-6 bg-surface text-background">
