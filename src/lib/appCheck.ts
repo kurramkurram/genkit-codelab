@@ -19,15 +19,10 @@ export function initializeFirebaseAppCheck() {
     window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
-  const appCheck = initializeAppCheck(app, {
+  return initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(
       process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY!,
     ),
     isTokenAutoRefreshEnabled: true,
   });
-
-  getToken(appCheck, false)
-    .catch((error) => {
-      console.error('Failed to acquire App Check token:', error);
-    });
 }
