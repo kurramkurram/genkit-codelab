@@ -53,10 +53,17 @@ export async function generateItinerary(
 
   const itineraryId = crypto.randomUUID();
 
+  const secret = process.env.SAVE_ITINERARY_SECRET;
+
+  if (!secret) {
+    throw new Error("SAVE_ITINERARY_SECRET is not configured");
+  }
+  
   const response = await fetch(functionUrl, {
       method: "POST",
       headers: {
-        "Content-type": "application/json"
+        "Content-type": "application/json",
+        "x-save-itinerary-secret": secret,
       },
       body: JSON.stringify({
         itinerary,

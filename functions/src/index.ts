@@ -57,51 +57,63 @@ export const saveHello = onRequest(async (req, res) => {
   }
 });
 
-export const saveItinerary = onRequest(async (req, res) => {
-  console.log("saveItinerary called");
+export const saveItinerary = onRequest(
+  {
+    secrets: ["SAVE_ITINERARY_SECRET"],
+  },
+  async (req, res) => {
+    console.log("saveItinerary called");
 
-  try {
-    if (req.method !== "POST") {
-      res.status(405).send("Method Not Allowed");
-      return;
+    try {
+      if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+      }
+
+      const secret = process.env.SAVE_ITINERARY_SECRET;
+
+      if (!secret || req.headers["x-save-itinerary-secret"] !== secret) {
+        res.status(401).send("Unauthorized");
+        return;
+      }
+
+      const {itineraryId, itinerary} = req.body;
+
+      if (!itineraryId) {
+        res.status(400).send("itineraryId is required");
+        return;
+      }
+
+      if (!itinerary) {
+        res.status(400).send("itinerary is required");
+        return;
+      }
+
+      const bucket = getStorage().bucket();
+
+      const file = bucket.file(
+        `itineraries/${itineraryId}.json`,
+      );
+
+      await file.save(JSON.stringify(itinerary, null, 2), {
+        contentType: "application/json",
+      });
+
+      console.log(`itinerary saved: ${itineraryId}`);
+
+      res.status(200).json({
+        success: true,
+      });
+    } catch (error) {
+      console.error("Failed to save itinerary", error);
+
+      res.status(500).json({
+        success: false,
+        error: "Failed to save itinerary",
+      });
     }
-
-    const {itineraryId, itinerary} = req.body;
-
-    if (!itineraryId) {
-      res.status(400).send("itineraryId is required");
-      return;
-    }
-
-    if (!itinerary) {
-      res.status(400).send("itinerary is required");
-      return;
-    }
-
-    const bucket = getStorage().bucket();
-
-    const file = bucket.file(
-      `itineraries/${itineraryId}.json`,
-    );
-
-    await file.save(JSON.stringify(itinerary, null, 2), {
-      contentType: "application/json",
-    });
-
-    console.log(`itinerary saved: ${itineraryId}`);
-
-    res.status(200).json({
-      success: true,
-    });
-  } catch (error) {
-    console.error("Failed to save itinerary", error);
-
-    res.status(500).json({
-      success: false,
-      error: "Failed to save itinerary",
-    });
   }
-});
+);
 
 export const getItinerary = onCall(
   {

@@ -3,7 +3,6 @@
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
-  getToken,
 } from 'firebase/app-check';
 
 import { app } from './firebase';
